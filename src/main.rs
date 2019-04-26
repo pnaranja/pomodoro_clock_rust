@@ -1,35 +1,53 @@
-use std::env::args;
+extern crate clap;
+extern crate rodio;
+
 use std::fs::File;
 use std::io::BufReader;
-use std::process::exit;
 use std::str::FromStr;
 use std::thread;
 use std::time;
+use std::process;
 
+use clap::{App, Arg};
 use rodio::Source;
 
-fn handle_args(args: &Vec<String>) {
-    if args.len() == 1 {
-        println!("USAGE: pomodoro_clock_rust <length_in_secs> <mp3>");
-        exit(1);
-    }
+/// Prints out general error message and exits the program "gracefully"
+fn exit_gracefully<E: std::fmt::Debug, T: std::fmt::Debug>(msg: E) -> T {
+    eprintln!("{:?}", msg);
+    process::exit(1);
 }
 
 fn play_music(file_loc: String) {
     let device = rodio::default_output_device().unwrap();
-
-    let file = File::open(file_loc).unwrap();
+    let file = File::open(file_loc).unwrap_or_else(|msg|exit_gracefully(format!("Problem opening file: {}", msg)));
     let source = rodio::Decoder::new(BufReader::new(file)).unwrap();
     rodio::play_raw(&device, source.convert_samples());
-
 }
 
 fn main() {
-    let args: Vec<String> = args().collect();
-    handle_args(&args);
+    let matches = App::new("pomodoro_clock_rust")
+        .version("0.1.0")
+        .author("Paul Naranja")
+        .about("A CLI pomodoro clock")
+        .arg(
+            Arg::with_name("length_in_secs")
+                .help("Length of pomodoro clock in secs")
+                .short("l")
+                .default_value("5")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("mp3")
+                .help("The location of the mp3 to play")
+                .short("m")
+                .default_value("sounds/Thunder_HeavyRain_Wind.mp3")
+                .takes_value(true),
+        )
+        .get_matches();
 
-    let length_in_secs = u64::from_str(&args[1]).unwrap();
-    let mp3_loc: String = args.get(2).unwrap().to_owned();
+    let length_in_sec_str = matches.value_of("length_in_secs").unwrap();
+    let length_in_secs = u64::from_str(length_in_sec_str).unwrap();
+    let mp3_loc: String = matches.value_of("mp3").unwrap().to_owned();
 
     thread::spawn(|| play_music(mp3_loc));
     thread::sleep(time::Duration::from_secs(length_in_secs));
