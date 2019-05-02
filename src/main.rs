@@ -51,7 +51,7 @@ fn main() {
         .get_matches();
 
     let length_in_sec_str = matches.value_of("length_in_secs").unwrap();
-    let length_in_secs = u64::from_str(length_in_sec_str).unwrap();
+    let length_in_secs = u64::from_str(length_in_sec_str).unwrap_or(60);
     let mp3_loc: String = matches.value_of("mp3").unwrap().to_owned();
 
     thread::spawn(|| play_music(mp3_loc));
