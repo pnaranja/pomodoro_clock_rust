@@ -3,13 +3,14 @@ extern crate rodio;
 
 use std::fs::File;
 use std::io::BufReader;
+use std::process;
 use std::str::FromStr;
 use std::thread;
 use std::time;
-use std::process;
 
 use clap::{App, Arg};
-use rodio::Source;
+use rodio::{Device, Source};
+use rodio::decoder::Decoder;
 
 /// Prints out general error message and exits the program "gracefully"
 fn exit_gracefully<E: std::fmt::Debug, T: std::fmt::Debug>(msg: E) -> T {
@@ -18,10 +19,14 @@ fn exit_gracefully<E: std::fmt::Debug, T: std::fmt::Debug>(msg: E) -> T {
 }
 
 fn play_music(file_loc: String) {
-    let device = rodio::default_output_device().unwrap();
-    let file = File::open(file_loc).unwrap_or_else(|msg|exit_gracefully(format!("Problem opening file: {}", msg)));
-    let source = rodio::Decoder::new(BufReader::new(file)).unwrap();
-    rodio::play_raw(&device, source.convert_samples());
+    let device: Device = rodio::default_output_device().unwrap();
+    let file = File::open(&file_loc).unwrap_or_else(|msg| {
+        exit_gracefully(format!("Problem opening file {}: {}", file_loc, msg))
+    });
+
+    let source: Decoder<BufReader<File>> = rodio::Decoder::new(BufReader::new(file)).unwrap();
+
+    rodio::play_raw(&device, source.repeat_infinite().convert_samples());
 }
 
 fn main() {
@@ -33,7 +38,7 @@ fn main() {
             Arg::with_name("length_in_secs")
                 .help("Length of pomodoro clock in secs")
                 .short("l")
-                .default_value("5")
+                .default_value("60")
                 .takes_value(true),
         )
         .arg(
