@@ -9,7 +9,8 @@ use std::thread;
 use std::time;
 
 use clap::{App, Arg};
-use rodio::{Device, Source};
+use rodio::{Device, Source, Sink};
+use rodio::source::Repeat;
 use rodio::decoder::Decoder;
 
 /// Prints out general error message and exits the program "gracefully"
@@ -18,15 +19,31 @@ fn exit_gracefully<E: std::fmt::Debug, T: std::fmt::Debug>(msg: E) -> T {
     process::exit(1);
 }
 
-fn play_music(file_loc: String) {
+fn play_music(file_loc: String, file_loc2 : String) {
     let device: Device = rodio::default_output_device().unwrap();
-    let file = File::open(&file_loc).unwrap_or_else(|msg| {
+
+    let file : File = File::open(&file_loc).unwrap_or_else(|msg| {
         exit_gracefully(format!("Problem opening file {}: {}", file_loc, msg))
     });
 
-    let source: Decoder<BufReader<File>> = rodio::Decoder::new(BufReader::new(file)).unwrap();
+    let file2 : File = File::open(&file_loc2).unwrap_or_else(|msg| {
+        exit_gracefully(format!("Problem opening file {}: {}", file_loc2, msg))
+    });
 
-    rodio::play_raw(&device, source.repeat_infinite().convert_samples());
+    let sink = Sink::new(&device);
+    let sink2 = Sink::new(&device);
+
+    let source:  Repeat<Decoder<BufReader<File>>> = rodio::Decoder::new(BufReader::new(file)).unwrap().repeat_infinite();
+    let source2: Repeat<Decoder<BufReader<File>>> = rodio::Decoder::new(BufReader::new(file2)).unwrap().repeat_infinite();
+
+    sink.append(source);
+    sink.play();
+
+    sink2.append(source2);
+    sink2.play();
+
+    sink.detach();
+    sink2.detach();
 }
 
 fn main() {
@@ -48,13 +65,22 @@ fn main() {
                 .default_value("sounds/Thunder_HeavyRain_Wind.mp3")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("mp3-2")
+                .help("The location of the mp3 to play")
+                .short("n")
+                .default_value("sounds/Thunder_HeavyRain_Wind.mp3")
+                .takes_value(true),
+        )
         .get_matches();
 
     let length_in_sec_str = matches.value_of("length_in_secs").unwrap();
     let length_in_secs = u64::from_str(length_in_sec_str).unwrap_or(60);
     let mp3_loc: String = matches.value_of("mp3").unwrap().to_owned();
+    let mp3_loc2: String = matches.value_of("mp3-2").unwrap().to_owned();
 
-    thread::spawn(|| play_music(mp3_loc));
+    thread::spawn(|| play_music(mp3_loc, mp3_loc2));
+    println!("Playing sound(s)");
     thread::sleep(time::Duration::from_secs(length_in_secs));
     println!("Playing ALARM!!!!")
 }
