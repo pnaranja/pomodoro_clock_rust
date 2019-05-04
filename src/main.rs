@@ -19,31 +19,29 @@ fn exit_gracefully<E: std::fmt::Debug, T: std::fmt::Debug>(msg: E) -> T {
     process::exit(1);
 }
 
-fn play_music(file_loc: String, file_loc2 : String) {
-    let device: Device = rodio::default_output_device().unwrap();
-
-    let file : File = File::open(&file_loc).unwrap_or_else(|msg| {
+/// Open file location and return File structure
+fn open_file(file_loc : String) -> File{
+    return File::open(&file_loc).unwrap_or_else(|msg| {
         exit_gracefully(format!("Problem opening file {}: {}", file_loc, msg))
     });
+}
 
-    let file2 : File = File::open(&file_loc2).unwrap_or_else(|msg| {
-        exit_gracefully(format!("Problem opening file {}: {}", file_loc2, msg))
-    });
-
+/// Play mp3 file at file location
+fn play_music_file(file_loc: String){
+    let device: Device = rodio::default_output_device().unwrap();
+    let file : File = open_file(file_loc);
     let sink = Sink::new(&device);
-    let sink2 = Sink::new(&device);
-
     let source:  Repeat<Decoder<BufReader<File>>> = rodio::Decoder::new(BufReader::new(file)).unwrap().repeat_infinite();
-    let source2: Repeat<Decoder<BufReader<File>>> = rodio::Decoder::new(BufReader::new(file2)).unwrap().repeat_infinite();
 
     sink.append(source);
     sink.play();
+    sink.detach()
+}
 
-    sink2.append(source2);
-    sink2.play();
-
-    sink.detach();
-    sink2.detach();
+/// Play music files at given location(s)
+fn play_music(file_loc: String, file_loc2 : String){
+    play_music_file(file_loc);
+    play_music_file(file_loc2);
 }
 
 fn main() {
