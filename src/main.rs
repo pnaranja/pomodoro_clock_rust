@@ -3,7 +3,6 @@ extern crate rodio;
 
 use std::fs::File;
 use std::io::BufReader;
-use std::process;
 use std::str::FromStr;
 use std::thread;
 use std::time;
@@ -15,14 +14,16 @@ use rodio::{Device, Sink, Source};
 
 /// Prints out general error message and exits the program "gracefully"
 fn exit_gracefully<E: std::fmt::Debug, T: std::fmt::Debug>(msg: E) -> T {
-    eprintln!("{:?}", msg);
-    process::exit(1);
+    panic!("{:?}", msg);
 }
 
 /// Open file location and return File structure
 fn open_file(file_loc: String) -> File {
     return File::open(&file_loc).unwrap_or_else(|msg| {
-        exit_gracefully(format!("Problem opening file {}: {}", file_loc, msg))
+        exit_gracefully(format!(
+            "Problem opening file: {} -- Error: {}",
+            file_loc, msg
+        ))
     });
 }
 
@@ -30,14 +31,14 @@ fn open_file(file_loc: String) -> File {
 fn play_music_file(file_loc: String) {
     let device: Device = rodio::default_output_device().unwrap();
     let file: File = open_file(file_loc);
-    let sink = Sink::new(&device);
+    let sink: Sink = Sink::new(&device);
     let source: Repeat<Decoder<BufReader<File>>> = rodio::Decoder::new(BufReader::new(file))
         .unwrap()
         .repeat_infinite();
 
     sink.append(source);
     sink.play();
-    sink.detach()
+    sink.detach();
 }
 
 /// Play music files at given location(s)
@@ -79,4 +80,16 @@ fn main() {
     println!("Playing sound(s)");
     thread::sleep(time::Duration::from_secs(length_in_secs));
     println!("!!!!FINISHED!!!!")
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::play_music_file;
+
+    #[test]
+    #[should_panic]
+    fn play_music_test() {
+        let a = String::from("A_Fake_File");
+        play_music_file(a);
+    }
 }
