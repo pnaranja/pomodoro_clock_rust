@@ -18,7 +18,7 @@ fn exit_gracefully<E: std::fmt::Debug, T: std::fmt::Debug>(msg: E) -> T {
 }
 
 /// Open file location and return File structure
-fn open_file(file_loc: String) -> File {
+fn open_file(file_loc: &str) -> File {
     return File::open(&file_loc).unwrap_or_else(|msg| {
         exit_gracefully(format!(
             "Problem opening file: {} -- Error: {}",
@@ -30,10 +30,10 @@ fn open_file(file_loc: String) -> File {
 /// Play mp3 file at file location
 fn play_music_file(file_loc: String) {
     let device: Device = rodio::default_output_device().unwrap();
-    let file: File = open_file(file_loc);
+    let file: File = open_file(&file_loc);
     let sink: Sink = Sink::new(&device);
     let source: Repeat<Decoder<BufReader<File>>> = rodio::Decoder::new(BufReader::new(file))
-        .unwrap()
+        .unwrap_or_else(|msg| panic!("Bad file: {} -- Error: {}", &file_loc, msg))
         .repeat_infinite();
 
     sink.append(source);
@@ -88,7 +88,15 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn play_music_test() {
+    /// This assumes the test is running from the root directory where Cargo.toml is located
+    fn play_music_test_bad_file() {
+        let a = String::from("Cargo.toml");
+        play_music_file(a);
+    }
+
+    #[test]
+    #[should_panic]
+    fn play_music_test_fake_file() {
         let a = String::from("A_Fake_File");
         play_music_file(a);
     }
