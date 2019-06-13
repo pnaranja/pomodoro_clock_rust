@@ -45,6 +45,6 @@ mod tests {
     #[should_panic]
     fn play_music_test_fake_file() {
         let a = String::from("A_Fake_File");
-        play_music_file(a);
+        music::play_music_file(a);
     }
 }

@@ -17,6 +17,7 @@ pub fn open_file(file_loc: &str) -> File {
 }
 
 /// Parse program arguments
+/// The 'static means the ArgMatches lifetime will last the whole program
 pub fn parse_args() -> ArgMatches<'static>{
     App::new("pomodoro_clock_rust")
         .version("0.1.0")
