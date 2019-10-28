@@ -24,10 +24,10 @@ pub fn parse_args() -> ArgMatches<'static>{
         .author("Paul Naranja")
         .about("A CLI pomodoro clock")
         .arg(
-            Arg::with_name("length_in_secs")
-                .help("Length of pomodoro clock in secs")
+            Arg::with_name("length_in_minutes")
+                .help("Length of pomodoro clock in minutes")
                 .short("l")
-                .default_value("60")
+                .default_value("1")
                 .required(true)
                 .takes_value(true),
         )

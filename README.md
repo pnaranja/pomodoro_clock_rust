@@ -15,3 +15,7 @@ OPTIONS:
     -m <mp3s>...               The location of the mp3s to play
 
 ```
+
+Things to do in the future:
+1. Add a timer
+2. Add a TUI?
