@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33.0"
-rodio = "0.8.1"
+rodio = "0.11.0"
